@@ -64,10 +64,34 @@ routes = {
   }
 }
 
-
 rule_sets = {
   usrules = {
     rules = {
+      californiarule = {
+        order             = 1
+        behavior_on_match = "Continue"
+        origin_group      = "mymobileapp-usa"
+        actions = {
+          route_configuration_override_action = {
+            forwarding_protocol = "HttpOnly"
+            compression_enabled = false
+            query_string_parameters       = ["home"]
+          }
+        }
+      }
+      utahrule = {
+        order             = 2
+        behavior_on_match = "Continue"
+        origin_group      = "mymobileapp-usa"
+        actions = {
+          url_redirect_action = {
+            redirect_type        = "PermanentRedirect"
+            redirect_protocol    = "MatchRequest"
+            destination_hostname = "contoso.com"
+          }
+
+        }
+      }
     }
   }
 }

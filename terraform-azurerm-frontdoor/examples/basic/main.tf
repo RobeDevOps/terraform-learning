@@ -11,3 +11,7 @@ module "frontdoor" {
   rule_sets           = var.rule_sets
 }
 
+output "rules" {
+  value = module.frontdoor.actions
+}
+

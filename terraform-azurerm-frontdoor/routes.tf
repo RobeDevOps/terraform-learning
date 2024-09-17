@@ -35,7 +35,7 @@ locals {
             custom_domain_key = "${domain.subdomain}-${domain.dns_zone_key}"
           } if domain.route == route
         ]
-        rule_sets = try(local.rule_sets, [])
+        rule_sets = try(route_config.rule_sets, [])
 
         cache = merge({
           # This is default values, then merging with proposed
@@ -55,13 +55,12 @@ locals {
 resource "azurerm_cdn_frontdoor_route" "all" {
   for_each = local.routes
 
-  name                          = each.key
-  cdn_frontdoor_endpoint_id     = azurerm_cdn_frontdoor_endpoint.all[each.value.endpoint].id
-  cdn_frontdoor_origin_group_id = azurerm_cdn_frontdoor_origin_group.main[each.value.origin_group_name].id
-
+  name                            = each.key
+  cdn_frontdoor_endpoint_id       = azurerm_cdn_frontdoor_endpoint.all[each.value.endpoint].id
+  cdn_frontdoor_origin_group_id   = azurerm_cdn_frontdoor_origin_group.main[each.value.origin_group_name].id
   cdn_frontdoor_origin_ids        = [for origin in each.value.origin_list : azurerm_cdn_frontdoor_origin.main[origin].id]
   cdn_frontdoor_custom_domain_ids = [for custom in each.value.custom_domains : azurerm_cdn_frontdoor_custom_domain.main[custom.custom_domain_key].id]
-  # cdn_frontdoor_rule_set_ids      = [for rule_set in each.value.rule_sets : azurerm_cdn_frontdoor_rule_set.main[rule_set].id]
+  cdn_frontdoor_rule_set_ids      = [for rule_set in each.value.rule_sets : azurerm_cdn_frontdoor_rule_set.main[rule_set].id]
 
   enabled                = each.value.enabled
   forwarding_protocol    = each.value.forwarding_protocol
