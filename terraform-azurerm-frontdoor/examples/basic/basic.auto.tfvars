@@ -73,23 +73,44 @@ rule_sets = {
         origin_group      = "mymobileapp-usa"
         actions = {
           route_configuration_override_action = {
-            forwarding_protocol = "HttpOnly"
-            compression_enabled = false
-            query_string_parameters       = ["home"]
+            forwarding_protocol     = "HttpOnly"
+            compression_enabled     = false
+            query_string_parameters = ["home"]
+          }
+        }
+        conditions = {
+          remote_address_condition = {
+            operator     = "IPMatch"
+            match_values = ["10.0.0.0/24"]
+          }
+          request_method_condition = {
+            operator         = "Equal"
+            negate_condition = false
+            match_values     = ["DELETE"]
           }
         }
       }
-      utahrule = {
-        order             = 2
+      elpaso = {
+        order             = 1
         behavior_on_match = "Continue"
         origin_group      = "mymobileapp-usa"
         actions = {
-          url_redirect_action = {
-            redirect_type        = "PermanentRedirect"
-            redirect_protocol    = "MatchRequest"
-            destination_hostname = "contoso.com"
+          route_configuration_override_action = {
+            forwarding_protocol     = "HttpOnly"
+            compression_enabled     = false
+            query_string_parameters = ["home"]
           }
-
+        }
+        conditions = {
+          remote_address_condition = {
+            operator     = "IPMatch"
+            match_values = ["10.0.0.0/24"]
+          }
+          request_method_condition = {
+            operator         = "Equal"
+            negate_condition = false
+            match_values     = ["DELETE"]
+          }
         }
       }
     }

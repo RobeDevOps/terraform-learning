@@ -1,9 +1,3 @@
-# locals {
-#   rule_sets = {
-#     for rule_set, rule_config in try(var.rule_sets, {}) : rule_set => rule_config
-#   }
-# }
-
 resource "azurerm_cdn_frontdoor_rule_set" "main" {
   for_each = try(var.rule_sets, {})
 
@@ -81,7 +75,18 @@ locals {
                   },
                 rule_config.actions.response_header_action) : null
               }
-              conditions = {}
+              conditions = {
+                for condition, condition_body in try(rule_config.conditions, {}) : condition => merge(
+                  {
+                    #defaults go here
+                    operator         = ""
+                    negate_condition = false
+                    match_values     = []
+                    transforms       = []
+                    post_args_name   = ""
+                    cookie_name      = ""
+                }, condition_body) if try(rule_config.conditions, {}) != {}
+              }
             }
           )
         ]
@@ -90,9 +95,7 @@ locals {
 }
 
 output "actions" {
-  # value = local.rules["usrulescaliforniarule"].actions
-  value = local.rules["usrulescaliforniarule"].actions
-  # value = "good"
+  value = local.rules["usrulescaliforniarule"].conditions
 }
 
 resource "azurerm_cdn_frontdoor_rule" "main" {
@@ -154,38 +157,168 @@ resource "azurerm_cdn_frontdoor_rule" "main" {
   }
 
   conditions {
-    host_name_condition {
-      operator         = "Equal"
-      negate_condition = false
-      match_values     = ["www.contoso.com", "images.contoso.com", "video.contoso.com"]
-      transforms       = ["Lowercase", "Trim"]
+    dynamic "remote_address_condition" {
+      for_each = can(each.value.conditions.remote_address_condition) ? [each.value.conditions.remote_address_condition] : []
+      content {
+        operator         = remote_address_condition.value.operator
+        negate_condition = remote_address_condition.value.negate_condition
+        match_values     = remote_address_condition.value.match_values
+      }
     }
-
-    #     is_device_condition {
-    #       operator         = "Equal"
-    #       negate_condition = false
-    #       match_values     = ["Mobile"]
-    #     }
-
-    #     post_args_condition {
-    #       post_args_name = "customerName"
-    #       operator       = "BeginsWith"
-    #       match_values   = ["J", "K"]
-    #       transforms     = ["Uppercase"]
-    #     }
-
-    #     request_method_condition {
-    #       operator         = "Equal"
-    #       negate_condition = false
-    #       match_values     = ["DELETE"]
-    #     }
-
-    #     url_filename_condition {
-    #       operator         = "Equal"
-    #       negate_condition = false
-    #       match_values     = ["media.mp4"]
-    #       transforms       = ["Lowercase", "RemoveNulls", "Trim"]
-    #     }
+    dynamic "request_method_condition" {
+      for_each = can(each.value.conditions.request_method_condition) ? [each.value.conditions.request_method_condition] : []
+      content {
+        operator         = request_method_condition.value.operator
+        negate_condition = request_method_condition.value.negate_condition
+        match_values     = request_method_condition.value.match_values
+      }
+    }
+    dynamic "query_string_condition" {
+      for_each = can(each.value.conditions.query_string_condition) ? [each.value.conditions.query_string_condition] : []
+      content {
+        operator         = query_string_condition.value.operator
+        negate_condition = query_string_condition.value.negate_condition
+        match_values     = query_string_condition.value.match_values
+        transforms       = query_string_condition.value.transforms
+      }
+    }
+    dynamic "post_args_condition" {
+      for_each = can(each.value.conditions.post_args_condition) ? [each.value.conditions.post_args_condition] : []
+      content {
+        post_args_name   = post_args_condition.value.post_args_name
+        operator         = post_args_condition.value.operator
+        negate_condition = post_args_condition.value.negate_condition
+        match_values     = post_args_condition.value.match_values
+        transforms       = post_args_condition.value.transforms
+      }
+    }
+    dynamic "request_uri_condition" {
+      for_each = can(each.value.conditions.request_uri_condition) ? [each.value.conditions.request_uri_condition] : []
+      content {
+        operator         = request_uri_condition.value.operator
+        negate_condition = request_uri_condition.value.negate_condition
+        match_values     = request_uri_condition.value.match_values
+        transforms       = request_uri_condition.value.transforms
+      }
+    }
+    dynamic "request_header_condition" {
+      for_each = can(each.value.conditions.request_header_condition) ? [each.value.conditions.request_header_condition] : []
+      content {
+        header_name      = request_header_condition.value.header_name
+        operator         = request_header_condition.value.operator
+        negate_condition = request_header_condition.value.negate_condition
+        match_values     = request_header_condition.value.match_values
+        transforms       = request_header_condition.value.transforms
+      }
+    }
+    dynamic "request_body_condition" {
+      for_each = can(each.value.conditions.request_body_condition) ? [each.value.conditions.request_body_condition] : []
+      content {
+        operator         = request_body_condition.value.operator
+        negate_condition = request_body_condition.value.negate_condition
+        match_values     = request_body_condition.value.match_values
+        transforms       = request_body_condition.value.transforms
+      }
+    }
+    dynamic "request_scheme_condition" {
+      for_each = can(each.value.conditions.request_scheme_condition) ? [each.value.conditions.request_scheme_condition] : []
+      content {
+        operator         = request_scheme_condition.value.operator
+        negate_condition = request_scheme_condition.value.negate_condition
+        match_values     = request_scheme_condition.value.match_values
+      }
+    }
+    dynamic "url_path_condition" {
+      for_each = can(each.value.conditions.url_path_condition) ? [each.value.conditions.url_path_condition] : []
+      content {
+        operator         = url_path_condition.value.operator
+        negate_condition = url_path_condition.value.negate_condition
+        match_values     = url_path_condition.value.match_values
+      }
+    }
+    dynamic "url_file_extension_condition" {
+      for_each = can(each.value.conditions.url_file_extension_condition) ? [each.value.conditions.url_file_extension_condition] : []
+      content {
+        operator         = url_file_extension_condition.value.operator
+        negate_condition = url_file_extension_condition.value.negate_condition
+        match_values     = url_file_extension_condition.value.match_values
+      }
+    }
+    dynamic "url_filename_condition" {
+      for_each = can(each.value.conditions.url_filename_condition) ? [each.value.conditions.url_filename_condition] : []
+      content {
+        operator         = url_filename_condition.value.operator
+        negate_condition = url_filename_condition.value.negate_condition
+        match_values     = url_filename_condition.value.match_values
+      }
+    }
+    dynamic "http_version_condition" {
+      for_each = can(each.value.conditions.http_version_condition) ? [each.value.conditions.http_version_condition] : []
+      content {
+        operator         = http_version_condition.value.operator
+        negate_condition = http_version_condition.value.negate_condition
+        match_values     = http_version_condition.value.match_values
+      }
+    }
+    dynamic "cookies_condition" {
+      for_each = can(each.value.conditions.cookies_condition) ? [each.value.conditions.cookies_condition] : []
+      content {
+        cookie_name      = cookies_condition.value.cookie_name
+        operator         = cookies_condition.value.operator
+        negate_condition = cookies_condition.value.negate_condition
+        match_values     = cookies_condition.value.match_values
+        transforms       = cookies_condition.value.transforms
+      }
+    }
+    dynamic "is_device_condition" {
+      for_each = can(each.value.conditions.is_device_condition) ? [each.value.conditions.is_device_condition] : []
+      content {
+        operator         = is_device_condition.value.operator
+        negate_condition = is_device_condition.value.negate_condition
+        match_values     = is_device_condition.value.match_values
+      }
+    }
+    dynamic "socket_address_condition" {
+      for_each = can(each.value.conditions.socket_address_condition) ? [each.value.conditions.socket_address_condition] : []
+      content {
+        operator         = socket_address_condition.value.operator
+        negate_condition = socket_address_condition.value.negate_condition
+        match_values     = socket_address_condition.value.match_values
+      }
+    }
+    dynamic "client_port_condition" {
+      for_each = can(each.value.conditions.client_port_condition) ? [each.value.conditions.client_port_condition] : []
+      content {
+        operator         = client_port_condition.value.operator
+        negate_condition = client_port_condition.value.negate_condition
+        match_values     = client_port_condition.value.match_values
+      }
+    }
+    dynamic "host_name_condition" {
+      for_each = can(each.value.conditions.host_name_condition) ? [each.value.conditions.host_name_condition] : []
+      content {
+        operator         = host_name_condition.value.operator
+        negate_condition = host_name_condition.value.negate_condition
+        match_values     = host_name_condition.value.match_values
+        transforms       = host_name_condition.value.transforms
+      }
+    }
+    dynamic "server_port_condition" {
+      for_each = can(each.value.conditions.server_port_condition) ? [each.value.conditions.server_port_condition] : []
+      content {
+        operator         = server_port_condition.value.operator
+        negate_condition = server_port_condition.value.negate_condition
+        match_values     = server_port_condition.value.match_values
+      }
+    }
+    dynamic "ssl_protocol_condition" {
+      for_each = can(each.value.conditions.ssl_protocol_condition) ? [each.value.conditions.ssl_protocol_condition] : []
+      content {
+        operator         = ssl_protocol_condition.value.operator
+        negate_condition = ssl_protocol_condition.value.negate_condition
+        match_values     = ssl_protocol_condition.value.match_values
+      }
+    }
   }
 
   depends_on = [
